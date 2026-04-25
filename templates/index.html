@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Safety Goggles Detector</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --teal: #00f5d4;
+        --pink: #f72585;
+        --orange: #ff9f1c;
+        --purple: #7b2d8b;
+        --blue: #4361ee;
+        --yellow: #ffe66d;
+        --white: #ffffff;
+        --dark: #0d0d1a;
+      }
+
+      body {
+        font-family: "DM Sans", sans-serif;
+        background: var(--dark);
+        min-height: 100vh;
+        padding: 0;
+        overflow-x: hidden;
+        position: relative;
+      }
+
+      /* ── Animated mesh background ── */
+      .bg-canvas {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background:
+          radial-gradient(
+            ellipse 80% 60% at 10% 10%,
+            #7b2d8b55 0%,
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse 60% 80% at 90% 5%,
+            #4361ee55 0%,
+            transparent 55%
+          ),
+          radial-gradient(
+            ellipse 70% 50% at 80% 80%,
+            #f7258533 0%,
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse 50% 70% at 5% 90%,
+            #00f5d433 0%,
+            transparent 55%
+          ),
+          radial-gradient(
+            ellipse 60% 60% at 50% 50%,
+            #ff9f1c22 0%,
+            transparent 70%
+          ),
+          var(--dark);
+        animation: bgShift 12s ease-in-out infinite alternate;
+      }
+      @keyframes bgShift {
+        0% {
+          filter: hue-rotate(0deg) brightness(1);
+        }
+        50% {
+          filter: hue-rotate(20deg) brightness(1.05);
+        }
+        100% {
+          filter: hue-rotate(-15deg) brightness(0.95);
+        }
+      }
+
+      /* Grid lines */
+      .bg-grid {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+          linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.025) 1px,
+            transparent 1px
+          );
+        background-size: 48px 48px;
+      }
+
+      /* Floating orbs */
+      .orb {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(80px);
+        z-index: 0;
+        animation: float 10s ease-in-out infinite alternate;
+        pointer-events: none;
+      }
+      .orb-1 {
+        width: 320px;
+        height: 320px;
+        background: #f7258540;
+        top: -80px;
+        left: -80px;
+        animation-delay: 0s;
+      }
+      .orb-2 {
+        width: 260px;
+        height: 260px;
+        background: #4361ee40;
+        bottom: -60px;
+        right: -60px;
+        animation-delay: -4s;
+      }
+      .orb-3 {
+        width: 200px;
+        height: 200px;
+        background: #00f5d430;
+        top: 50%;
+        left: 60%;
+        animation-delay: -7s;
+      }
+      @keyframes float {
+        0% {
+          transform: translate(0, 0) scale(1);
+        }
+        50% {
+          transform: translate(30px, -20px) scale(1.05);
+        }
+        100% {
+          transform: translate(-10px, 30px) scale(0.95);
+        }
+      }
+
+      /* ── Layout ── */
+      .wrapper {
+        position: relative;
+        z-index: 1;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 40px 24px 60px;
+      }
+
+      /* ── Header ── */
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 999px;
+        padding: 5px 16px;
+        margin-bottom: 18px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--teal);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .pill-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--teal);
+        box-shadow: 0 0 6px var(--teal);
+        animation: pulse 2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+
+      h1 {
+        font-family: "Syne", sans-serif;
+        font-size: clamp(2rem, 5vw, 3.4rem);
+        font-weight: 800;
+        color: var(--white);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+      }
+      h1 span {
+        background: linear-gradient(
+          90deg,
+          var(--teal),
+          var(--blue),
+          var(--pink)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .subtitle {
+        margin-top: 10px;
+        font-size: 15px;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 0.5);
+        letter-spacing: 0.01em;
+      }
+
+      /* ── Toolbar ── */
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 32px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.07);
+        color: rgba(255, 255, 255, 0.85);
+        font-family: "DM Sans", sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        backdrop-filter: blur(12px);
+      }
+      .btn:hover {
+        background: rgba(255, 255, 255, 0.14);
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+        color: #fff;
+      }
+      .btn:active {
+        transform: translateY(0) scale(0.98);
+      }
+      .btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .btn-detect {
+        background: linear-gradient(135deg, var(--teal), var(--blue));
+        border: none;
+        color: var(--dark);
+        font-weight: 700;
+        padding: 10px 26px;
+        box-shadow: 0 0 24px rgba(0, 245, 212, 0.3);
+      }
+      .btn-detect:hover {
+        box-shadow: 0 0 36px rgba(0, 245, 212, 0.5);
+        background: linear-gradient(135deg, #00fde0, #5a74f5);
+        color: var(--dark);
+      }
+
+      /* ── Panels ── */
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      @media (max-width: 620px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .panel {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        overflow: hidden;
+        transition: border-color 0.3s;
+      }
+      .panel:hover {
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .panel-label {
+        font-family: "Syne", sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.4);
+      }
+      .ph-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .ph-dot-input {
+        background: var(--orange);
+      }
+      .ph-dot-result {
+        background: var(--teal);
+      }
+
+      .panel-body {
+        padding: 14px;
+      }
+
+      .img-wrap {
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px dashed rgba(255, 255, 255, 0.1);
+        min-height: 280px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .img-wrap img,
+      .img-wrap video {
+        width: 100%;
+        min-height: 280px;
+        object-fit: contain;
+        display: block;
+        border-radius: 12px;
+      }
+      .placeholder {
+        position: absolute;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.2);
+        font-size: 13px;
+        line-height: 1.7;
+        pointer-events: none;
+      }
+      .placeholder-icon {
+        font-size: 32px;
+        margin-bottom: 8px;
+        display: block;
+      }
+
+      /* ── Status badge ── */
+      .status-row {
+        margin-top: 12px;
+      }
+      .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        border: 1px solid;
+      }
+      .status-badge.idle {
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.4);
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+      .status-badge.compliant {
+        background: rgba(0, 245, 150, 0.1);
+        color: #00f596;
+        border-color: rgba(0, 245, 150, 0.3);
+      }
+      .status-badge.violation {
+        background: rgba(247, 37, 133, 0.1);
+        color: #ff6baa;
+        border-color: rgba(247, 37, 133, 0.3);
+      }
+      .s-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .idle .s-dot {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      .compliant .s-dot {
+        background: #00f596;
+        box-shadow: 0 0 8px #00f596;
+      }
+      .violation .s-dot {
+        background: #ff6baa;
+        box-shadow: 0 0 8px #ff6baa;
+      }
+      .confidence {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.3);
+        margin-top: 6px;
+        padding: 0 2px;
+      }
+
+      /* ── Corner accent lines ── */
+      .panel-input {
+        --accent: var(--orange);
+      }
+      .panel-result {
+        --accent: var(--teal);
+      }
+      .panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 60px;
+        height: 3px;
+        background: var(--accent);
+        border-radius: 0 0 4px 0;
+        opacity: 0.7;
+      }
+      .panel {
+        position: relative;
+      }
+
+      #fileInput {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg-canvas"></div>
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="wrapper">
+      <!-- Header -->
+      <header class="header">
+        <div class="pill">
+          <span class="pill-dot"></span>PPE Compliance Tool
+        </div>
+        <h1>Safety <span>Goggles</span> Detector</h1>
+        <p class="subtitle">
+          Upload an image or use your webcam to check for safety goggles
+        </p>
+      </header>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <button
+          class="btn"
+          onclick="document.getElementById('fileInput').click()"
+        >
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 15 15"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+          >
+            <path
+              d="M7.5 9.5V2.5M4.5 5.5l3-3 3 3M1.5 11v1.5a1 1 0 001 1h11a1 1 0 001-1V11"
+            />
+          </svg>
+          Upload image
+        </button>
+        <button class="btn" onclick="toggleWebcam()" id="webcamBtn">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 15 15"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+          >
+            <circle cx="7.5" cy="7.5" r="2.5" />
+            <path
+              d="M3 4.5H4l1-1.5h5l1 1.5h1a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5a1 1 0 011-1z"
+            />
+          </svg>
+          Toggle webcam
+        </button>
+        <button class="btn btn-detect" onclick="detect()" id="detectBtn">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 15 15"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+          >
+            <circle cx="6.5" cy="6.5" r="4" />
+            <path d="M10.5 10.5l3 3" />
+          </svg>
+          Detect
+        </button>
+        <input
+          type="file"
+          id="fileInput"
+          accept="image/*"
+          onchange="handleFileSelect(event)"
+        />
+      </div>
+
+      <!-- Panels -->
+      <div class="grid">
+        <div class="panel panel-input">
+          <div class="panel-header">
+            <div class="ph-dot ph-dot-input"></div>
+            <span class="panel-label">Input</span>
+          </div>
+          <div class="panel-body">
+            <div class="img-wrap" id="inputWrap">
+              <img
+                id="inputImage"
+                src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                alt=""
+              />
+              <div class="placeholder" id="inputPlaceholder">
+                <span class="placeholder-icon">📤</span>
+                Upload an image<br />or enable webcam
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel panel-result">
+          <div class="panel-header">
+            <div class="ph-dot ph-dot-result"></div>
+            <span class="panel-label">Result</span>
+          </div>
+          <div class="panel-body">
+            <div class="img-wrap">
+              <img
+                id="resultImage"
+                src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                alt=""
+              />
+              <div class="placeholder" id="resultPlaceholder">
+                <span class="placeholder-icon">🔍</span>
+                Result will appear here
+              </div>
+            </div>
+            <div class="status-row">
+              <div class="status-badge idle" id="statusDiv">
+                <span class="s-dot"></span>
+                <span id="statusText">Awaiting detection</span>
+              </div>
+              <div class="confidence" id="confidenceDiv"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /wrapper -->
+
+    <script>
+      const BLANK =
+        "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+      let webcamStream = null,
+        webcamActive = false;
+
+      function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          document.getElementById("inputImage").src = e.target.result;
+          document.getElementById("inputPlaceholder").style.display = "none";
+          resetResult();
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function resetResult() {
+        document.getElementById("resultImage").src = BLANK;
+        document.getElementById("resultPlaceholder").style.display = "";
+        setStatus("idle", "Awaiting detection", "");
+      }
+
+      function setStatus(type, text, confidence) {
+        const badge = document.getElementById("statusDiv");
+        badge.className = "status-badge " + type;
+        document.getElementById("statusText").textContent = text;
+        document.getElementById("confidenceDiv").textContent = confidence;
+      }
+
+      async function toggleWebcam() {
+        const inputImg = document.getElementById("inputImage");
+        const wrap = document.getElementById("inputWrap");
+        const btn = document.getElementById("webcamBtn");
+
+        if (webcamActive) {
+          if (webcamStream) webcamStream.getTracks().forEach((t) => t.stop());
+          webcamActive = false;
+          const vid = document.getElementById("webcamVideo");
+          if (vid) vid.remove();
+          inputImg.style.display = "";
+          inputImg.src = BLANK;
+          document.getElementById("inputPlaceholder").style.display = "";
+          btn.style.cssText = "";
+          resetResult();
+        } else {
+          try {
+            webcamStream = await navigator.mediaDevices.getUserMedia({
+              video: { width: 640, height: 480, facingMode: "user" },
+            });
+            const video = document.createElement("video");
+            video.id = "webcamVideo";
+            video.srcObject = webcamStream;
+            video.setAttribute("autoplay", "true");
+            video.setAttribute("playsinline", "true");
+            video.style.cssText =
+              "width:100%;min-height:280px;object-fit:contain;display:block;border-radius:12px;";
+            inputImg.style.display = "none";
+            document.getElementById("inputPlaceholder").style.display = "none";
+            wrap.appendChild(video);
+            webcamActive = true;
+            btn.style.background = "rgba(0,245,212,.15)";
+            btn.style.borderColor = "rgba(0,245,212,.4)";
+            btn.style.color = "#00f5d4";
+            resetResult();
+          } catch (err) {
+            alert("Error accessing webcam: " + err.message);
+          }
+        }
+      }
+
+      async function detect() {
+        const inputElement = document.getElementById("inputImage");
+        const webcamVideo = document.getElementById("webcamVideo");
+        const resultImg = document.getElementById("resultImage");
+        const detectBtn = document.getElementById("detectBtn");
+        const usingWebcam = webcamActive && webcamVideo;
+
+        if (
+          !usingWebcam &&
+          (inputElement.src === window.location.href ||
+            inputElement.src.includes("base64,R0lGODlh"))
+        ) {
+          alert("Please upload an image or enable webcam first!");
+          return;
+        }
+
+        detectBtn.disabled = true;
+        detectBtn.textContent = "Processing...";
+        setStatus("idle", "Analyzing image...", "");
+
+        async function sendRequest(formData) {
+          try {
+            const response = await fetch("/detect", {
+              method: "POST",
+              body: formData,
+            });
+            const data = await response.json();
+            if (response.ok && data.status === "success") {
+              resultImg.src = "data:image/jpeg;base64," + data.image_base64;
+              document.getElementById("resultPlaceholder").style.display =
+                "none";
+              setStatus(
+                data.is_compliant ? "compliant" : "violation",
+                data.status_text,
+                data.confidence,
+              );
+            } else {
+              throw new Error(data.error || "Unknown error from server");
+            }
+          } catch (error) {
+            setStatus("violation", "Error: " + error.message, "");
+          } finally {
+            detectBtn.disabled = false;
+            detectBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6.5" cy="6.5" r="4"/><path d="M10.5 10.5l3 3"/></svg> Detect`;
+          }
+        }
+
+        try {
+          let formData = new FormData();
+          if (usingWebcam) {
+            const canvas = document.createElement("canvas");
+            canvas.width = webcamVideo.videoWidth || 640;
+            canvas.height = webcamVideo.videoHeight || 480;
+            canvas
+              .getContext("2d")
+              .drawImage(webcamVideo, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(
+              (blob) => {
+                formData.append("webcam_frame", blob, "webcam.jpg");
+                sendRequest(formData);
+              },
+              "image/jpeg",
+              0.9,
+            );
+          } else {
+            const fileInput = document.getElementById("fileInput");
+            if (fileInput.files.length > 0) {
+              formData.append("image", fileInput.files[0]);
+            } else {
+              const resp = await fetch(inputElement.src);
+              formData.append("image", await resp.blob(), "image.jpg");
+            }
+            sendRequest(formData);
+          }
+        } catch (error) {
+          setStatus("violation", "Error: " + error.message, "");
+          detectBtn.disabled = false;
+          detectBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6.5" cy="6.5" r="4"/><path d="M10.5 10.5l3 3"/></svg> Detect`;
+        }
+      }
+    </script>
+  </body>
+</html>
