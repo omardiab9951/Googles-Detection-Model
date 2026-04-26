@@ -1,4 +1,3 @@
-
 <div align="center">
 
 <img src="https://img.shields.io/badge/Safety%20AI-Industrial%20Vision-FF4500?style=for-the-badge" />
@@ -55,52 +54,13 @@ The model was developed across multiple training iterations (v1–v4), scaling f
 
 ## 📦 Dataset
 
-- **Source:** Kaggle PPE Detection Dataset
-- **Size:** ~737 images
+- **Collection:** Manually collected by the author — images sourced and curated specifically for goggles detection in industrial contexts
+- **Labeling:** Annotated and labeled using **Roboflow**, with bounding boxes drawn exclusively around goggles regions
 - **Classes:** 2 — `goggles` (compliant), `no_goggle` (non-compliant)
 - **Format:** YOLO-format bounding box annotations
-- **Split:** Stratified train / validation split
+- **Split:** Train / validation split configured via Roboflow's export pipeline
 
 > ⚠️ The dataset exhibits natural class imbalance — goggles instances are more frequent than no_goggle instances. Augmentation strategies and loss weighting were carefully applied to mitigate this.
-
----
-
-## 🚀 Novel Research Contributions
-
-This project goes beyond standard fine-tuning. Three original pipeline contributions were designed as core research differentiators, targeting potential publication in **IEEE Access** or **MDPI Sensors**.
-
-### 1. 🌫️ Stochastic Low-Resolution Degradation Augmentation (SLRDA)
-Simulates the image quality degradation typical of real-world CCTV cameras — blur, compression artifacts, reduced resolution — during training. This forces the model to generalize to the imperfect visual conditions of actual industrial deployments rather than only performing well on clean benchmark images.
-
-### 2. 🔆 SR-Inspired CLAHE Enhancement
-A preprocessing step inspired by Super-Resolution techniques. Contrast-Limited Adaptive Histogram Equalization (CLAHE) is applied in a spatially-aware manner to recover fine-grained texture detail in goggles and face regions from low-contrast or poorly-lit industrial footage — improving detection confidence where it matters most.
-
-### 3. ⚖️ Uncertainty-Aware Compliance Engine
-A post-processing layer that wraps raw model predictions with calibrated confidence thresholds. Rather than binary present/absent decisions, the engine outputs a **three-tier compliance status**:
-
-| Status | Meaning |
-|---|---|
-| ✅ **Compliant** | Goggles clearly detected above threshold |
-| ⚠️ **Uncertain** | Flagged for human review |
-| 🚫 **Non-Compliant** | No goggles detected — alert triggered |
-
-This reduces false positives in ambiguous frames while ensuring high-risk cases are never silently missed.
-
----
-
-## 📊 Training Iterations
-
-| Run | Model | Key Config | Status |
-|---|---|---|---|
-| v1 | YOLOv8n | Default params | Baseline — strong on `goggles`, weak on `no_goggle` |
-| v2 | YOLOv8n | Augmentation tuning | Marginal minority class improvement |
-| v3 | YOLOv8s | Scaled architecture | Better capacity, imbalance persists |
-| v4 | YOLOv8m | AdamW + cosine LR + aggressive augmentation | ✅ Best checkpoint — current production model |
-
-Key diagnostics from the iterative process:
-- Absence-of-object detection (`no_goggle`) is inherently harder than presence detection
-- High classification loss weight (`cls=3.0`) introduced training instability and was reduced
-- Copy-paste augmentation required careful tuning to prevent label noise contamination
 
 ---
 
@@ -145,27 +105,6 @@ model.predict(source="factory_footage.mp4", conf=0.5, save=True)
 
 ---
 
-## 📁 Repository Structure
-
-```
-Googles-Detection-Model/
-│
-├── data/                    # Dataset configuration
-│   └── data.yaml            # YOLO dataset config (class names, paths)
-│
-├── weights/                 # Trained model checkpoints
-│   └── best.pt              # Best performing checkpoint (v4)
-│
-├── notebooks/               # Training & evaluation notebooks
-│   └── training.ipynb       # Full training pipeline (Kaggle-ready)
-│
-├── runs/                    # YOLO training output (metrics, plots, curves)
-│
-└── README.md
-```
-
----
-
 ## 🎯 Target Use Cases
 
 | Environment | Application |
@@ -189,10 +128,9 @@ A passive, always-on AI compliance layer represents a paradigm shift: from **rea
 ## 🔭 Roadmap & Future Work
 
 - [ ] Expand to full PPE detection suite: helmets, gloves, high-vis vests, face masks
-- [ ] Integrate Uncertainty-Aware Compliance Engine with live alert systems (Slack, SMS, dashboard)
 - [ ] Edge deployment: ONNX / TensorRT export for NVIDIA Jetson and Raspberry Pi
 - [ ] Multi-camera scene tracking with worker ID association across frames
-- [ ] Formal paper submission to **IEEE Access** or **MDPI Sensors**
+- [ ] Live alert system integration (Slack, SMS, monitoring dashboard)
 
 ---
 
