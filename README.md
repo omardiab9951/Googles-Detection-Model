@@ -123,16 +123,7 @@ model.predict(source="factory_footage.mp4", conf=0.5, save=True)
 
 A passive, always-on AI compliance layer represents a paradigm shift: from **reactive incident response** to **proactive prevention** — at a fraction of the cost of dedicated safety personnel.
 
----
 
-## 🔭 Roadmap & Future Work
-
-- [ ] Expand to full PPE detection suite: helmets, gloves, high-vis vests, face masks
-- [ ] Edge deployment: ONNX / TensorRT export for NVIDIA Jetson and Raspberry Pi
-- [ ] Multi-camera scene tracking with worker ID association across frames
-- [ ] Live alert system integration (Slack, SMS, monitoring dashboard)
-
----
 
 ## 👤 Author
 
